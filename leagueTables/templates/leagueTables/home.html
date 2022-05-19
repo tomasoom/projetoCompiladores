@@ -1,0 +1,10 @@
+{% extends 'leagueTables/base.html' %}
+
+{% block main %}
+   {% for liga in ligas %}
+      <!-- <p>{{ liga.nome }}</p> -->
+       <a href="{% url 'leagueTables:liga' liga.id %}" class="btn btn-sucess"> {{ liga.nome }}</a>
+   {% endfor %}
+    <a href="{% url 'leagueTables:novoClube' %}" class="btn btn-sucess"> Teste Adicionar Clube </a>
+    <a href="{% url 'leagueTables:novaLiga' %}" class="btn btn-sucess"> Teste Adicionar Liga </a>
+{% endblock %}

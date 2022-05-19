@@ -1,0 +1,12 @@
+{% extends 'leagueTables/base.html' %}
+
+{% block main %}
+    <h3>Novo Clube</h3>
+
+    <form method="POST" action="">
+        {% csrf_token %}
+
+        {{ form.as_p }}
+    <input type="submit" value="Gravar">
+    </form>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'leagueTables/base.html' %}
+{% with "1" as posicao %}
+{% endwith %}
+
+
+
+{% block main %}
+
+    <table class="table">
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">Nome</th>
+      <th scope="col">JD</th>
+      <th scope="col">Vitórias</th>
+      <th scope="col">Empates</th>
+      <th scope="col">Derrotas</th>
+      <th scope="col">GM</th>
+      <th scope="col">GS</th>
+      <th scope="col">DG</th>
+      <th scope="col">Pontos</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for clube in liga.listaEquipas.all %}
+      <!-- <p>{{ liga.listaEquipas.all }}</p> -->
+      <tr>
+        <th scope="row"> {{ posicao }}</th>
+        <td>{{ clube.nome }}</td>
+        <td>{{ clube.jogosDisputados }}</td>
+        <td>{{ clube.vitorias }}</td>
+        <td>{{ clube.empates }}</td>
+        <td>{{ clube.derrotas }}</td>
+        <td>{{ clube.golosMarcados }}</td>
+        <td>{{ clube.golosSofridos }}</td>
+        <td>{{ clube.diferencaDeGolos }}</td>
+        <td>{{ clube.pontos }}</td>
+      </tr>
+  {% endfor %}
+  </tbody>
+</table>
+  {% for jogo in jogos %}
+    {% if jogo.concluido %}
+      <p class="bg-info"><a href="{% url 'leagueTables:simulaJogo' jogo.id %}" class="btn btn-warning btn-sm" style="float: right; margin-right: 10px">Simular </a>{{ jogo.golosCasa }} {{ jogo }} {{ jogo.golosFora }}</p>
+    {% else %}
+      <p class="bg-light"><a href="{% url 'leagueTables:simulaJogo' jogo.id %}" class="btn btn-warning btn-sm" style="float: right; margin-right: 10px">Simular </a>{{ jogo.golosCasa }} {{ jogo }} {{ jogo.golosFora }}</p>
+    {% endif %}
+    
+    
+  
+  {% endfor %}
+
+
+{% endblock %}
