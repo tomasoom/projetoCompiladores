@@ -13,20 +13,20 @@ def home_view(request):
     return render(request, 'leagueTables/home.html', context)
 
 def addClube_view(request):
-    form = ClubeForm()
+    form = ClubeForm(request.POST or None)
     if form.is_valid():
         form.save()
-        return HttpResponseRedirect(reverse('home'))
+        return HttpResponseRedirect(reverse('leagueTables:home'))
 
     context = {'form': form}
 
     return render(request, 'leagueTables/novoClube.html', context)
 
 def addLiga_view(request):
-    form = LigaForm()
+    form = LigaForm(request.POST or None)
     if form.is_valid():
         form.save()
-        return HttpResponseRedirect(reverse('home'))
+        return HttpResponseRedirect(reverse('leagueTables:home'))
 
     context = {'form': form}
 
@@ -35,6 +35,11 @@ def addLiga_view(request):
 def liga_view(request, liga_id):
     liga = Liga.objects.get(pk=liga_id)
     liga.save()
+
+    for equipa in liga.listaEquipas.all():
+        if equipa.ligas.all().count() > 1:
+            Jogo.objects.filter(jornada__liga)
+
     if not Jogo.objects.filter(jornada__liga=liga):
         if len(liga.listaEquipas.all()) % 2 == 1: players = liga.listaEquipas.all() + [None]
         # manipulate map (array of indexes for list) instead of list itself
@@ -101,19 +106,34 @@ def liga_view(request, liga_id):
             liga.save()
         '''
 
+        '''
         for jogo in Jogo.objects.filter(jornada__liga=liga):
             nJornada2 = Jornada(liga=liga)
             nJornada2.save()
             jogo2 = Jogo(equipaCasa=jogo.equipaFora, equipaFora = jogo.equipaCasa, jornada=nJornada2)
             nJornada2.save()
             jogo2.save()
+        '''
+
+        #Jornada.objects.all().order_by('?')
+
+        for jornada in Jornada.objects.filter(liga=liga):
+            nJornada2 = Jornada(liga=liga)
+            nJornada2.save()
+            for jogo in Jogo.objects.filter(jornada=jornada):
+                jogo2 = Jogo(equipaCasa=jogo.equipaFora, equipaFora=jogo.equipaCasa, jornada=nJornada2)
+                nJornada2.save()
+                jogo2.save()
+
+
             
         
 
     liga.save()
-    liga.listaEquipas.order_by('-pontos', '-diferencaDeGolos')
-    liga.save()
-    context = {'liga': liga, liga_id: liga_id, 'jogos': Jogo.objects.filter(jornada__liga=liga)}
+    i = 0
+    listaEquipasOrdenada = liga.listaEquipas.all().order_by('-pontos', '-diferencaDeGolos', '-golosMarcados')
+    
+    context = {'liga': liga, liga_id: liga_id, 'jogos': Jogo.objects.filter(jornada__liga=liga), 'classificacao': listaEquipasOrdenada, 'jornadas': Jornada.objects.filter(liga=liga)}
     return render(request, 'leagueTables/liga.html', context)
   
 
@@ -152,6 +172,10 @@ def simulaJogo_view(request, jogo_id):
                 equipaF.golosSofridos += 1
                 equipaF.save()
                 jogo.save()
+                equipaC.diferencaDeGolos += 1
+                equipaC.save()
+                equipaF.diferencaDeGolos -= 1
+                equipaF.save()
             elif random.choice(lista2) <= jogo.equipaFora.qualidade:
                 jogo.golosFora += 1
                 jogo.save()
@@ -161,6 +185,10 @@ def simulaJogo_view(request, jogo_id):
                 equipaC.golosSofridos += 1
                 equipaC.save()
                 jogo.save()
+                equipaC.diferencaDeGolos -= 1
+                equipaC.save()
+                equipaF.diferencaDeGolos += 1
+                equipaF.save()
 
         #string = f"{ponderadorCasa}  {self.equipaCasa.nome} {self.golosCasa} - {self.golosFora} {self.equipaFora.nome}  {ponderadorFora}"
 
@@ -216,8 +244,134 @@ def simulaJogo_view(request, jogo_id):
             equipaF.jogosDisputados += 1
             equipaF.save()
             jogo.save()
-
+        
         return HttpResponseRedirect(reverse('leagueTables:home'))
         #context = {'jogo': jogo, jogo_id: jogo_id}
         #return render(request, 'leagueTables/liga.html', context)
+    return HttpResponseRedirect(reverse('leagueTables:home'))
+
+def clearLiga_view(request, liga_id):
+    liga = Liga.objects.get(pk=liga_id)
+    for jogo in Jogo.objects.filter(jornada__liga=liga, concluido=True):
+        jogo.golosCasa=0
+        jogo.save()
+        jogo.golosFora=0
+        jogo.save()
+        jogo.concluido=False
+        jogo.save()
+    
+    liga.listaEquipas.all().update(jogosDisputados=0, vitorias=0, empates=0, derrotas=0, golosMarcados=0, golosSofridos=0, diferencaDeGolos=0, pontos=0)
+
+    #context = {'liga': liga.listaEquipas.order_by('-pontos', '-diferencaDeGolos')}
+
+    return HttpResponseRedirect(reverse('leagueTables:home'))
+
+def simulaLiga_view(request, liga_id):
+    liga = Liga.objects.get(pk=liga_id)
+    for jogo in Jogo.objects.filter(jornada__liga=liga):
+        if jogo.concluido == False:
+
+            jogo.concluido = True
+            jogo.save()
+            equipaC = jogo.equipaCasa
+            equipaC.save()
+            equipaF = jogo.equipaFora
+            equipaF.save()
+
+            jogo.golosCasa = 0
+            jogo.save()
+            jogo.golosFora = 0
+            jogo.save()
+            #self.golosCasa = 0
+            #self.golosFora = 0
+
+            ponderadorCasa = jogo.equipaCasa.qualidade ** 2.50 / jogo.equipaFora.qualidade ** 2.50
+            ponderadorFora = jogo.equipaFora.qualidade ** 2.50 / jogo.equipaCasa.qualidade ** 2.50
+
+            lista1 = [i for i in range(1, int((5000 + 1) * ponderadorFora))]
+            lista2 = [i for i in range(1, int((5000 + 1) * ponderadorCasa))]
+
+            for tempo in range(1, 90 + 1):
+                if random.choice(lista1) <= jogo.equipaCasa.qualidade:
+                    jogo.golosCasa += 1
+                    jogo.save()
+                    equipaC.golosMarcados += 1
+                    equipaC.save()
+                    jogo.save()
+                    equipaF.golosSofridos += 1
+                    equipaF.save()
+                    jogo.save()
+                    equipaC.diferencaDeGolos += 1
+                    equipaC.save()
+                    equipaF.diferencaDeGolos -= 1
+                    equipaF.save()
+                elif random.choice(lista2) <= jogo.equipaFora.qualidade:
+                    jogo.golosFora += 1
+                    jogo.save()
+                    equipaF.golosMarcados += 1
+                    equipaF.save()
+                    jogo.save()
+                    equipaC.golosSofridos += 1
+                    equipaC.save()
+                    jogo.save()
+                    equipaC.diferencaDeGolos -= 1
+                    equipaC.save()
+                    equipaF.diferencaDeGolos += 1
+                    equipaF.save()
+
+            #string = f"{ponderadorCasa}  {self.equipaCasa.nome} {self.golosCasa} - {self.golosFora} {self.equipaFora.nome}  {ponderadorFora}"
+
+            if jogo.golosCasa > jogo.golosFora:
+                equipaC.vitorias += 1
+                equipaC.save()
+                jogo.save()
+                equipaC.pontos += 3
+                equipaC.save()
+                jogo.save()
+                equipaF.derrotas += 1
+                equipaF.save()
+                jogo.save()
+                equipaC.jogosDisputados += 1
+                equipaC.save()
+                jogo.save()
+                equipaF.jogosDisputados += 1
+                equipaF.save()
+                jogo.save()
+
+            elif jogo.golosCasa == jogo.golosFora:
+                equipaC.empates += 1
+                equipaC.save()
+                jogo.save()
+                equipaC.pontos += 1
+                equipaC.save()
+                jogo.save()
+                equipaF.empates += 1
+                equipaF.save()
+                jogo.save()
+                equipaF.pontos += 1
+                equipaF.save()
+                jogo.save()
+                equipaC.jogosDisputados += 1
+                equipaC.save()
+                jogo.save()
+                equipaF.jogosDisputados += 1
+                equipaF.save()
+                jogo.save()
+            else:
+                equipaC.derrotas += 1
+                equipaC.save()
+                jogo.save()
+                equipaF.vitorias += 1
+                equipaF.save()
+                jogo.save()
+                equipaF.pontos += 3
+                equipaF.save()
+                jogo.save()
+                equipaC.jogosDisputados += 1
+                equipaC.save()
+                jogo.save()
+                equipaF.jogosDisputados += 1
+                equipaF.save()
+                jogo.save()
+    
     return HttpResponseRedirect(reverse('leagueTables:home'))

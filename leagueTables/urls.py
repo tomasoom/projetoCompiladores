@@ -8,5 +8,7 @@ urlpatterns = [
     path('novoClube', views.addClube_view, name="novoClube"),
     path('novaLiga', views.addLiga_view, name="novaLiga"),
     path('liga/<int:liga_id>', views.liga_view, name="liga"),
-    path('jogo/<int:jogo_id>', views.simulaJogo_view, name='simulaJogo')
+    path('jogo/<int:jogo_id>', views.simulaJogo_view, name='simulaJogo'),
+    path('limpa/<int:liga_id>', views.clearLiga_view, name="clear"),
+    path('simulaLiga/<int:liga_id>', views.simulaLiga_view, name='simulaLiga'),
 ]

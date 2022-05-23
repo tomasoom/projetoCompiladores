@@ -23,7 +23,7 @@ class Clube(models.Model):
 
 class Liga(models.Model):
     nome = models.CharField(max_length=30, default="liga")
-    listaEquipas = models.ManyToManyField(Clube)
+    listaEquipas = models.ManyToManyField(Clube, related_name='ligas')
     #jornadas = models.ManyToManyField(Jornada)
 
     def __str__(self):

@@ -1,4 +1,5 @@
 {% extends 'leagueTables/base.html' %}
+{% load mathfilters %}
 {% with "1" as posicao %}
 {% endwith %}
 
@@ -22,10 +23,10 @@
     </tr>
   </thead>
   <tbody>
-  {% for clube in liga.listaEquipas.all %}
+  {% for clube in classificacao %}
       <!-- <p>{{ liga.listaEquipas.all }}</p> -->
       <tr>
-        <th scope="row"> {{ posicao }}</th>
+        <th scope="row"> {{forloop.counter}}</th>
         <td>{{ clube.nome }}</td>
         <td>{{ clube.jogosDisputados }}</td>
         <td>{{ clube.vitorias }}</td>
@@ -39,16 +40,26 @@
   {% endfor %}
   </tbody>
 </table>
-  {% for jogo in jogos %}
-    {% if jogo.concluido %}
-      <p class="bg-info"><a href="{% url 'leagueTables:simulaJogo' jogo.id %}" class="btn btn-warning btn-sm" style="float: right; margin-right: 10px">Simular </a>{{ jogo.golosCasa }} {{ jogo }} {{ jogo.golosFora }}</p>
-    {% else %}
-      <p class="bg-light"><a href="{% url 'leagueTables:simulaJogo' jogo.id %}" class="btn btn-warning btn-sm" style="float: right; margin-right: 10px">Simular </a>{{ jogo.golosCasa }} {{ jogo }} {{ jogo.golosFora }}</p>
-    {% endif %}
-    
-    
   
-  {% endfor %}
 
+
+
+  {% for jornada in jornadas %}
+    <p>Jornada {{forloop.counter}}
+    {% for jogo in jogos %}
+      {% if jogo.jornada == jornada %}
+        {% if jogo.concluido %}
+          <p class="bg-info"><a href="{% url 'leagueTables:simulaJogo' jogo.id %}" class="btn btn-warning btn-sm" style="float: right; margin-right: 10px">Simular </a>{{ jogo.golosCasa }} {{ jogo }} {{ jogo.golosFora }}</p>
+        {% else %}
+          <p class="bg-light"><a href="{% url 'leagueTables:simulaJogo' jogo.id %}" class="btn btn-warning btn-sm" style="float: right; margin-right: 10px">Simular </a>{{ jogo.golosCasa }} {{ jogo }} {{ jogo.golosFora }}</p>
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+     
+  
+  
+  <h1 class="bg-info  margin-bottom: 5px"><a href="{% url 'leagueTables:simulaLiga' liga.id %}" class="btn btn-warning btn-sm" style="float: right; margin-right: 10px;">Simular Liga</a></h1>
+  <h1 class="bg-info  margin-bottom: 5px"><a href="{% url 'leagueTables:clear' liga.id %}" class="btn btn-warning btn-sm" style="float: right; margin-right: 10px;">Clear</a></h1>
 
 {% endblock %}
