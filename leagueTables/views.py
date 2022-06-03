@@ -1,3 +1,4 @@
+from msilib.schema import Class
 from pickle import FALSE
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
@@ -36,9 +37,10 @@ def liga_view(request, liga_id):
     liga = Liga.objects.get(pk=liga_id)
     liga.save()
 
-    for equipa in liga.listaEquipas.all():
-        if equipa.ligas.all().count() > 1:
-            Jogo.objects.filter(jornada__liga)
+    if not Classificacao.objects.filter(liga=liga):
+        for equipa in liga.listaEquipas.all():
+            classificacao = Classificacao(clube=equipa, liga=liga)
+            classificacao.save()
 
     if not Jogo.objects.filter(jornada__liga=liga):
         if len(liga.listaEquipas.all()) % 2 == 1: players = liga.listaEquipas.all() + [None]
@@ -125,15 +127,15 @@ def liga_view(request, liga_id):
                 nJornada2.save()
                 jogo2.save()
 
-
-            
+        
         
 
     liga.save()
     i = 0
-    listaEquipasOrdenada = liga.listaEquipas.all().order_by('-pontos', '-diferencaDeGolos', '-golosMarcados')
+    #listaEquipasOrdenada = liga.listaEquipas.all().order_by('-pontos', '-diferencaDeGolos', '-golosMarcados')
+    listaEquipasOrdenada = Classificacao.objects.filter(liga=liga).order_by('-pontos', '-diferencaDeGolos', '-golosMarcados')
     
-    context = {'liga': liga, liga_id: liga_id, 'jogos': Jogo.objects.filter(jornada__liga=liga), 'classificacao': listaEquipasOrdenada, 'jornadas': Jornada.objects.filter(liga=liga)}
+    context = {'liga': liga, liga_id: liga_id, 'jogos': Jogo.objects.filter(jornada__liga=liga), 'classificacoes': listaEquipasOrdenada, 'jornadas': Jornada.objects.filter(liga=liga)}
     return render(request, 'leagueTables/liga.html', context)
   
 
@@ -142,6 +144,8 @@ def simulaJogo_view(request, jogo_id):
 
     if jogo.concluido == False:
 
+        
+
         jogo.concluido = True
         jogo.save()
         equipaC = jogo.equipaCasa
@@ -149,10 +153,17 @@ def simulaJogo_view(request, jogo_id):
         equipaF = jogo.equipaFora
         equipaF.save()
 
+        classificacaoCasa = Classificacao.objects.get(clube=equipaC, liga=jogo.jornada.liga)
+        classificacaoCasa.save()
+        classificacaoFora = Classificacao.objects.get(clube=equipaF, liga=jogo.jornada.liga)
+        classificacaoFora.save()
+
         jogo.golosCasa = 0
         jogo.save()
         jogo.golosFora = 0
         jogo.save()
+
+
         #self.golosCasa = 0
         #self.golosFora = 0
 
@@ -166,89 +177,90 @@ def simulaJogo_view(request, jogo_id):
             if random.choice(lista1) <= jogo.equipaCasa.qualidade:
                 jogo.golosCasa += 1
                 jogo.save()
-                equipaC.golosMarcados += 1
-                equipaC.save()
+                classificacaoCasa.golosMarcados += 1
+                classificacaoCasa.save()
                 jogo.save()
-                equipaF.golosSofridos += 1
-                equipaF.save()
+                classificacaoFora.golosSofridos += 1
+                classificacaoFora.save()
                 jogo.save()
-                equipaC.diferencaDeGolos += 1
-                equipaC.save()
-                equipaF.diferencaDeGolos -= 1
-                equipaF.save()
+                classificacaoCasa.diferencaDeGolos += 1
+                classificacaoCasa.save()
+                classificacaoFora.diferencaDeGolos -= 1
+                classificacaoFora.save()
             elif random.choice(lista2) <= jogo.equipaFora.qualidade:
                 jogo.golosFora += 1
                 jogo.save()
-                equipaF.golosMarcados += 1
-                equipaF.save()
+                classificacaoFora.golosMarcados += 1
+                classificacaoFora.save()
                 jogo.save()
-                equipaC.golosSofridos += 1
-                equipaC.save()
+                classificacaoCasa.golosSofridos += 1
+                classificacaoCasa.save()
                 jogo.save()
-                equipaC.diferencaDeGolos -= 1
-                equipaC.save()
-                equipaF.diferencaDeGolos += 1
-                equipaF.save()
+                classificacaoCasa.diferencaDeGolos -= 1
+                classificacaoCasa.save()
+                classificacaoFora.diferencaDeGolos += 1
+                classificacaoFora.save()
 
         #string = f"{ponderadorCasa}  {self.equipaCasa.nome} {self.golosCasa} - {self.golosFora} {self.equipaFora.nome}  {ponderadorFora}"
 
         if jogo.golosCasa > jogo.golosFora:
-            equipaC.vitorias += 1
-            equipaC.save()
+            classificacaoCasa.vitorias += 1
+            classificacaoCasa.save()
             jogo.save()
-            equipaC.pontos += 3
-            equipaC.save()
+            classificacaoCasa.pontos += 3
+            classificacaoCasa.save()
             jogo.save()
-            equipaF.derrotas += 1
-            equipaF.save()
+            classificacaoFora.derrotas += 1
+            classificacaoFora.save()
             jogo.save()
-            equipaC.jogosDisputados += 1
-            equipaC.save()
+            classificacaoCasa.jogosDisputados += 1
+            classificacaoCasa.save()
             jogo.save()
-            equipaF.jogosDisputados += 1
-            equipaF.save()
+            classificacaoFora.jogosDisputados += 1
+            classificacaoFora.save()
             jogo.save()
 
         elif jogo.golosCasa == jogo.golosFora:
-            equipaC.empates += 1
-            equipaC.save()
+            classificacaoCasa.empates += 1
+            classificacaoCasa.save()
             jogo.save()
-            equipaC.pontos += 1
-            equipaC.save()
+            classificacaoCasa.pontos += 1
+            classificacaoCasa.save()
             jogo.save()
-            equipaF.empates += 1
-            equipaF.save()
+            classificacaoFora.empates += 1
+            classificacaoFora.save()
             jogo.save()
-            equipaF.pontos += 1
-            equipaF.save()
+            classificacaoFora.pontos += 1
+            classificacaoFora.save()
             jogo.save()
-            equipaC.jogosDisputados += 1
-            equipaC.save()
+            classificacaoCasa.jogosDisputados += 1
+            classificacaoCasa.save()
             jogo.save()
-            equipaF.jogosDisputados += 1
-            equipaF.save()
+            classificacaoFora.jogosDisputados += 1
+            classificacaoFora.save()
             jogo.save()
         else:
-            equipaC.derrotas += 1
-            equipaC.save()
+            classificacaoCasa.derrotas += 1
+            classificacaoCasa.save()
             jogo.save()
-            equipaF.vitorias += 1
-            equipaF.save()
+            classificacaoFora.vitorias += 1
+            classificacaoFora.save()
             jogo.save()
-            equipaF.pontos += 3
-            equipaF.save()
+            classificacaoFora.pontos += 3
+            classificacaoFora.save()
             jogo.save()
-            equipaC.jogosDisputados += 1
-            equipaC.save()
+            classificacaoCasa.jogosDisputados += 1
+            classificacaoCasa.save()
             jogo.save()
-            equipaF.jogosDisputados += 1
-            equipaF.save()
+            classificacaoFora.jogosDisputados += 1
+            classificacaoFora.save()
             jogo.save()
         
         return HttpResponseRedirect(reverse('leagueTables:home'))
         #context = {'jogo': jogo, jogo_id: jogo_id}
         #return render(request, 'leagueTables/liga.html', context)
     return HttpResponseRedirect(reverse('leagueTables:home'))
+
 
 def clearLiga_view(request, liga_id):
     liga = Liga.objects.get(pk=liga_id)
@@ -260,8 +272,8 @@ def clearLiga_view(request, liga_id):
         jogo.concluido=False
         jogo.save()
     
-    liga.listaEquipas.all().update(jogosDisputados=0, vitorias=0, empates=0, derrotas=0, golosMarcados=0, golosSofridos=0, diferencaDeGolos=0, pontos=0)
-
+    #liga.listaEquipas.all().update(jogosDisputados=0, vitorias=0, empates=0, derrotas=0, golosMarcados=0, golosSofridos=0, diferencaDeGolos=0, pontos=0)
+    Classificacao.objects.filter(liga=liga).update(jogosDisputados=0, vitorias=0, empates=0, derrotas=0, golosMarcados=0, golosSofridos=0, diferencaDeGolos=0, pontos=0)
     #context = {'liga': liga.listaEquipas.order_by('-pontos', '-diferencaDeGolos')}
 
     return HttpResponseRedirect(reverse('leagueTables:home'))
@@ -277,6 +289,13 @@ def simulaLiga_view(request, liga_id):
             equipaC.save()
             equipaF = jogo.equipaFora
             equipaF.save()
+
+            #classificacaoCasa = Classificacao(clube=equipaC, liga=liga)
+            #classificacaoCasa.save()
+            classificacaoCasa = Classificacao.objects.get(clube=equipaC, liga=liga)
+            classificacaoCasa.save()
+            classificacaoFora = Classificacao.objects.get(clube=equipaF, liga=liga)
+            classificacaoFora.save()
 
             jogo.golosCasa = 0
             jogo.save()
@@ -295,83 +314,83 @@ def simulaLiga_view(request, liga_id):
                 if random.choice(lista1) <= jogo.equipaCasa.qualidade:
                     jogo.golosCasa += 1
                     jogo.save()
-                    equipaC.golosMarcados += 1
-                    equipaC.save()
+                    classificacaoCasa.golosMarcados += 1
+                    classificacaoCasa.save()
                     jogo.save()
-                    equipaF.golosSofridos += 1
-                    equipaF.save()
+                    classificacaoFora.golosSofridos += 1
+                    classificacaoFora.save()
                     jogo.save()
-                    equipaC.diferencaDeGolos += 1
-                    equipaC.save()
-                    equipaF.diferencaDeGolos -= 1
-                    equipaF.save()
+                    classificacaoCasa.diferencaDeGolos += 1
+                    classificacaoCasa.save()
+                    classificacaoFora.diferencaDeGolos -= 1
+                    classificacaoFora.save()
                 elif random.choice(lista2) <= jogo.equipaFora.qualidade:
                     jogo.golosFora += 1
                     jogo.save()
-                    equipaF.golosMarcados += 1
-                    equipaF.save()
+                    classificacaoFora.golosMarcados += 1
+                    classificacaoFora.save()
                     jogo.save()
-                    equipaC.golosSofridos += 1
-                    equipaC.save()
+                    classificacaoCasa.golosSofridos += 1
+                    classificacaoCasa.save()
                     jogo.save()
-                    equipaC.diferencaDeGolos -= 1
-                    equipaC.save()
-                    equipaF.diferencaDeGolos += 1
-                    equipaF.save()
+                    classificacaoCasa.diferencaDeGolos -= 1
+                    classificacaoCasa.save()
+                    classificacaoFora.diferencaDeGolos += 1
+                    classificacaoFora.save()
 
             #string = f"{ponderadorCasa}  {self.equipaCasa.nome} {self.golosCasa} - {self.golosFora} {self.equipaFora.nome}  {ponderadorFora}"
 
             if jogo.golosCasa > jogo.golosFora:
-                equipaC.vitorias += 1
-                equipaC.save()
+                classificacaoCasa.vitorias += 1
+                classificacaoCasa.save()
                 jogo.save()
-                equipaC.pontos += 3
-                equipaC.save()
+                classificacaoCasa.pontos += 3
+                classificacaoCasa.save()
                 jogo.save()
-                equipaF.derrotas += 1
-                equipaF.save()
+                classificacaoFora.derrotas += 1
+                classificacaoFora.save()
                 jogo.save()
-                equipaC.jogosDisputados += 1
-                equipaC.save()
+                classificacaoCasa.jogosDisputados += 1
+                classificacaoCasa.save()
                 jogo.save()
-                equipaF.jogosDisputados += 1
-                equipaF.save()
+                classificacaoFora.jogosDisputados += 1
+                classificacaoFora.save()
                 jogo.save()
 
             elif jogo.golosCasa == jogo.golosFora:
-                equipaC.empates += 1
-                equipaC.save()
+                classificacaoCasa.empates += 1
+                classificacaoCasa.save()
                 jogo.save()
-                equipaC.pontos += 1
-                equipaC.save()
+                classificacaoCasa.pontos += 1
+                classificacaoCasa.save()
                 jogo.save()
-                equipaF.empates += 1
-                equipaF.save()
+                classificacaoFora.empates += 1
+                classificacaoFora.save()
                 jogo.save()
-                equipaF.pontos += 1
-                equipaF.save()
+                classificacaoFora.pontos += 1
+                classificacaoFora.save()
                 jogo.save()
-                equipaC.jogosDisputados += 1
-                equipaC.save()
+                classificacaoCasa.jogosDisputados += 1
+                classificacaoCasa.save()
                 jogo.save()
-                equipaF.jogosDisputados += 1
-                equipaF.save()
+                classificacaoFora.jogosDisputados += 1
+                classificacaoFora.save()
                 jogo.save()
             else:
-                equipaC.derrotas += 1
-                equipaC.save()
+                classificacaoCasa.derrotas += 1
+                classificacaoCasa.save()
                 jogo.save()
-                equipaF.vitorias += 1
-                equipaF.save()
+                classificacaoFora.vitorias += 1
+                classificacaoFora.save()
                 jogo.save()
-                equipaF.pontos += 3
-                equipaF.save()
+                classificacaoFora.pontos += 3
+                classificacaoFora.save()
                 jogo.save()
-                equipaC.jogosDisputados += 1
-                equipaC.save()
+                classificacaoCasa.jogosDisputados += 1
+                classificacaoCasa.save()
                 jogo.save()
-                equipaF.jogosDisputados += 1
-                equipaF.save()
+                classificacaoFora.jogosDisputados += 1
+                classificacaoFora.save()
                 jogo.save()
     
     return HttpResponseRedirect(reverse('leagueTables:home'))

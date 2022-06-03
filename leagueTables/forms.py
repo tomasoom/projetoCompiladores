@@ -5,7 +5,7 @@ class ClubeForm(ModelForm):
     class Meta:
         model = Clube
         fields = '__all__'
-        exclude = ['qualidade']
+        
 
 class LigaForm(ModelForm):
     class Meta:

@@ -1,20 +1,12 @@
 from django.db import models
 
 # Create your models here.
-from django.db import models
+#from django.db import models
 
 # Create your models here.
 class Clube(models.Model):
     nome = models.CharField(max_length=30)        #no Construtor
     qualidade = models.IntegerField(default=50)   #no Construtor
-    jogosDisputados = models.IntegerField(default = 0, editable=False)
-    vitorias = models.IntegerField(default=0, editable=False)
-    empates = models.IntegerField(default=0, editable=False)
-    derrotas = models.IntegerField(default=0, editable=False)
-    golosMarcados = models.IntegerField(default=0, editable=False)
-    golosSofridos = models.IntegerField(default=0, editable=False)
-    diferencaDeGolos = models.IntegerField(default=0, editable=False)
-    pontos = models.IntegerField(default=0, editable=False)
     nacionalidade = models.CharField(max_length=30)
 
     def __str__(self):
@@ -28,6 +20,22 @@ class Liga(models.Model):
 
     def __str__(self):
         return self.nome
+
+class Classificacao(models.Model):
+    clube = models.ForeignKey(Clube, on_delete=models.CASCADE, related_name='clube')
+    liga = models.ForeignKey(Liga, on_delete=models.CASCADE, related_name='cliga')
+    jogosDisputados = models.IntegerField(default = 0, editable=False)
+    vitorias = models.IntegerField(default=0, editable=False)
+    empates = models.IntegerField(default=0, editable=False)
+    derrotas = models.IntegerField(default=0, editable=False)
+    golosMarcados = models.IntegerField(default=0, editable=False)
+    golosSofridos = models.IntegerField(default=0, editable=False)
+    diferencaDeGolos = models.IntegerField(default=0, editable=False)
+    pontos = models.IntegerField(default=0, editable=False)
+
+    def __str__(self):
+        return f"Classificação {self.clube} em {self.liga}"
+    
 
 
 class Jornada(models.Model):
@@ -50,7 +58,8 @@ class Jogo(models.Model):
         return f"{self.equipaCasa} vs {self.equipaFora}"
 
 
-    
+
+         
 
 
 
