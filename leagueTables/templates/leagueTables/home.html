@@ -2,9 +2,16 @@
 
 {% block main %}
    {% for liga in ligas %}
+        <div class="mt-4 p-5 bg-primary text-white rounded">
+
       <!-- <p>{{ liga.nome }}</p> -->
-       <a href="{% url 'leagueTables:liga' liga.id %}" class="btn btn-sucess"> {{ liga.nome }}</a>
+            <a href="{% url 'leagueTables:liga' liga.id %}" class="btn btn-sucess bg-light"> {{ liga.nome }}</a>
+        </div>
    {% endfor %}
     <a href="{% url 'leagueTables:novoClube' %}" class="btn btn-sucess"> Teste Adicionar Clube </a>
     <a href="{% url 'leagueTables:novaLiga' %}" class="btn btn-sucess"> Teste Adicionar Liga </a>
 {% endblock %}
+
+
+
+
