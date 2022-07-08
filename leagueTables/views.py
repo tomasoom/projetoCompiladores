@@ -141,7 +141,7 @@ def liga_view(request, liga_id):
 
 def simulaJogo_view(request, jogo_id):
     jogo = Jogo.objects.get(pk=jogo_id)
-
+    liga = jogo.jornada.liga
     if jogo.concluido == False:
 
         
@@ -256,10 +256,10 @@ def simulaJogo_view(request, jogo_id):
             classificacaoFora.save()
             jogo.save()
         
-        return HttpResponseRedirect(reverse('leagueTables:home'))
+        return HttpResponseRedirect(reverse('leagueTables:liga', args=[liga.id]))
         #context = {'jogo': jogo, jogo_id: jogo_id}
         #return render(request, 'leagueTables/liga.html', context)
-    return HttpResponseRedirect(reverse('leagueTables:home'))
+    return HttpResponseRedirect(reverse('leagueTables:liga', args=[liga.id]))
 
 
 def clearLiga_view(request, liga_id):
@@ -393,4 +393,122 @@ def simulaLiga_view(request, liga_id):
                 classificacaoFora.save()
                 jogo.save()
     
-    return HttpResponseRedirect(reverse('leagueTables:home'))
+    return HttpResponseRedirect(reverse('leagueTables:liga', args=[liga_id,]))
+
+def simulaJornada_view(request, jornada_id):
+    jornada = Jornada.objects.get(pk=jornada_id)
+    liga = jornada.liga
+    for jogo in Jogo.objects.filter(jornada=jornada):
+        if jogo.concluido == False:
+
+            jogo.concluido = True
+            jogo.save()
+            equipaC = jogo.equipaCasa
+            equipaC.save()
+            equipaF = jogo.equipaFora
+            equipaF.save()
+
+            #classificacaoCasa = Classificacao(clube=equipaC, liga=liga)
+            #classificacaoCasa.save()
+            classificacaoCasa = Classificacao.objects.get(clube=equipaC, liga=liga)
+            classificacaoCasa.save()
+            classificacaoFora = Classificacao.objects.get(clube=equipaF, liga=liga)
+            classificacaoFora.save()
+
+            jogo.golosCasa = 0
+            jogo.save()
+            jogo.golosFora = 0
+            jogo.save()
+            #self.golosCasa = 0
+            #self.golosFora = 0
+
+            ponderadorCasa = jogo.equipaCasa.qualidade ** 2.50 / jogo.equipaFora.qualidade ** 2.50
+            ponderadorFora = jogo.equipaFora.qualidade ** 2.50 / jogo.equipaCasa.qualidade ** 2.50
+
+            lista1 = [i for i in range(1, int((5000 + 1) * ponderadorFora))]
+            lista2 = [i for i in range(1, int((5000 + 1) * ponderadorCasa))]
+
+            for tempo in range(1, 90 + 1):
+                if random.choice(lista1) <= jogo.equipaCasa.qualidade:
+                    jogo.golosCasa += 1
+                    jogo.save()
+                    classificacaoCasa.golosMarcados += 1
+                    classificacaoCasa.save()
+                    jogo.save()
+                    classificacaoFora.golosSofridos += 1
+                    classificacaoFora.save()
+                    jogo.save()
+                    classificacaoCasa.diferencaDeGolos += 1
+                    classificacaoCasa.save()
+                    classificacaoFora.diferencaDeGolos -= 1
+                    classificacaoFora.save()
+                elif random.choice(lista2) <= jogo.equipaFora.qualidade:
+                    jogo.golosFora += 1
+                    jogo.save()
+                    classificacaoFora.golosMarcados += 1
+                    classificacaoFora.save()
+                    jogo.save()
+                    classificacaoCasa.golosSofridos += 1
+                    classificacaoCasa.save()
+                    jogo.save()
+                    classificacaoCasa.diferencaDeGolos -= 1
+                    classificacaoCasa.save()
+                    classificacaoFora.diferencaDeGolos += 1
+                    classificacaoFora.save()
+
+            #string = f"{ponderadorCasa}  {self.equipaCasa.nome} {self.golosCasa} - {self.golosFora} {self.equipaFora.nome}  {ponderadorFora}"
+
+            if jogo.golosCasa > jogo.golosFora:
+                classificacaoCasa.vitorias += 1
+                classificacaoCasa.save()
+                jogo.save()
+                classificacaoCasa.pontos += 3
+                classificacaoCasa.save()
+                jogo.save()
+                classificacaoFora.derrotas += 1
+                classificacaoFora.save()
+                jogo.save()
+                classificacaoCasa.jogosDisputados += 1
+                classificacaoCasa.save()
+                jogo.save()
+                classificacaoFora.jogosDisputados += 1
+                classificacaoFora.save()
+                jogo.save()
+
+            elif jogo.golosCasa == jogo.golosFora:
+                classificacaoCasa.empates += 1
+                classificacaoCasa.save()
+                jogo.save()
+                classificacaoCasa.pontos += 1
+                classificacaoCasa.save()
+                jogo.save()
+                classificacaoFora.empates += 1
+                classificacaoFora.save()
+                jogo.save()
+                classificacaoFora.pontos += 1
+                classificacaoFora.save()
+                jogo.save()
+                classificacaoCasa.jogosDisputados += 1
+                classificacaoCasa.save()
+                jogo.save()
+                classificacaoFora.jogosDisputados += 1
+                classificacaoFora.save()
+                jogo.save()
+            else:
+                classificacaoCasa.derrotas += 1
+                classificacaoCasa.save()
+                jogo.save()
+                classificacaoFora.vitorias += 1
+                classificacaoFora.save()
+                jogo.save()
+                classificacaoFora.pontos += 3
+                classificacaoFora.save()
+                jogo.save()
+                classificacaoCasa.jogosDisputados += 1
+                classificacaoCasa.save()
+                jogo.save()
+                classificacaoFora.jogosDisputados += 1
+                classificacaoFora.save()
+                jogo.save()
+
+    return HttpResponseRedirect(reverse('leagueTables:liga', args=[liga.id,]))

@@ -44,7 +44,8 @@
 
 {% for jornada in jornadas %}
 <div class="mt-4 p-5 bg-primary text-white rounded">
-  <p>Jornada {{forloop.counter}}</p>
+  <h1 class= "bg-info" style="color:black margin-bottom: 5px"> <a href="{% url 'leagueTables:simulaJornada' jornada.id %}" class="btn btn-warning btn-sm" style="float: right; margin-right: 10px">Simular</a> Jornada {{forloop.counter}} </h1>
+  
   {% for jogo in jogos %}
     {% if jogo.jornada == jornada %}
       {% if jogo.concluido %}
